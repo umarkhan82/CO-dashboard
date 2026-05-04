@@ -1,0 +1,770 @@
+(function () {
+  const DATA =
+    (window.CO_DATA &&
+      window.CO_DATA.peaceGovernance &&
+      window.CO_DATA.peaceGovernance.records) ||
+    [];
+
+  const ADMIN_AREAS =
+    (window.CO_DATA &&
+      window.CO_DATA.peaceGovernance &&
+      window.CO_DATA.peaceGovernance.adminAreas) ||
+    [];
+
+  const SOUTH_SUDAN_CENTER = [7.3, 30.2];
+
+  const COUNTY_COORDS = {
+    "Juba": [4.86, 31.57],
+    "Yei": [4.09, 30.68],
+    "Kajo-Keji": [3.85, 31.65],
+    "Lainya": [4.6, 30.0],
+    "Terekeka": [5.44, 31.75],
+    "Morobo": [3.68, 30.78],
+    "Torit": [4.41, 32.57],
+    "Magwi": [4.13, 32.29],
+    "Ikotos": [4.04, 33.05],
+    "Budi": [4.9, 33.2],
+    "Kapoeta East": [4.77, 34.1],
+    "Kapoeta North": [4.95, 33.65],
+    "Kapoeta South": [4.77, 33.58],
+    "Lafon": [5.25, 32.35],
+    "Bor South": [6.21, 31.56],
+    "Akobo": [7.78, 33.0],
+    "Ayod": [8.12, 31.4],
+    "Fangak": [8.15, 31.85],
+    "Uror": [8.25, 32.05],
+    "Duk": [7.3, 31.5],
+    "Twic East": [7.55, 31.5],
+    "Pibor": [6.8, 33.13],
+    "Pochalla": [7.0, 34.1],
+    "Rumbek Centre": [6.82, 29.68],
+    "Cueibet": [7.03, 29.25],
+    "Yirol East": [6.55, 30.5],
+    "Yirol West": [6.55, 30.0],
+    "Awerial": [6.1, 31.1],
+    "Rumbek East": [6.65, 30.05],
+    "Aweil Centre": [8.77, 27.4],
+    "Aweil East": [8.75, 27.95],
+    "Aweil North": [9.1, 27.7],
+    "Aweil South": [8.35, 27.8],
+    "Aweil West": [8.85, 26.9],
+    "Malakal": [9.53, 31.66],
+    "Renk": [11.74, 32.8],
+    "Maban": [10.05, 33.65],
+    "Ulang": [8.77, 33.15],
+    "Fashoda": [9.9, 32.0],
+    "Baliet": [9.35, 32.4],
+    "Manyo": [10.5, 32.1],
+    "Luakpiny/Nasir": [8.6, 33.4],
+    "Maiwut": [8.6, 34.3],
+    "Rubkona": [9.25, 29.8],
+    "Bentiu": [9.25, 29.8],
+    "Mayom": [9.2, 29.0],
+    "Leer": [8.3, 30.15],
+    "Koch": [8.6, 29.85],
+    "Mayendit": [8.05, 30.35],
+    "Panyijiar": [7.25, 30.25],
+    "Guit": [9.35, 30.15],
+    "Pariang": [9.95, 29.95],
+    "Wau": [7.7, 28.0],
+    "Jur River": [7.9, 28.2],
+    "Raja": [8.45, 25.7],
+    "Yambio": [4.57, 28.4],
+    "Nzara": [4.63, 28.25],
+    "Ezo": [4.87, 27.7],
+    "Maridi": [4.92, 29.45],
+    "Mundri East": [5.35, 30.0],
+    "Mundri West": [5.35, 29.5],
+    "Tambura": [5.6, 27.47],
+    "Ibba": [4.93, 28.95],
+    "Tonj North": [7.75, 28.5],
+    "Tonj East": [7.35, 29.0],
+    "Tonj South": [7.1, 28.6],
+    "Twic": [8.25, 28.6],
+    "Gogrial East": [8.45, 28.9],
+    "Gogrial West": [8.55, 28.35],
+    "Abyei Region": [9.6, 28.45],
+    "Abiemnhom": [9.55, 29.1]
+  };
+
+  const CHART_BLUE = "#3BA4F7";
+  const CHART_GREEN = "#34d399";
+  const CHART_ORANGE = "#fb923c";
+  const MALE_COLOR = "#60a5fa";
+  const FEMALE_COLOR = "#f472b6";
+
+  let map = null;
+  let markersLayer = null;
+  let lastTables = {};
+
+  const $ = (id) => document.getElementById(id);
+
+  function fmt(n) {
+    return (Number(n) || 0).toLocaleString(undefined, {
+      maximumFractionDigits: 0
+    });
+  }
+
+  function fmt1(n) {
+    return (Number(n) || 0).toLocaleString(undefined, {
+      maximumFractionDigits: 1
+    });
+  }
+
+  function pct(current, target) {
+    const c = Number(current) || 0;
+    const t = Number(target) || 0;
+    return t ? (c / t) * 100 : 0;
+  }
+
+  function uniqueValues(records, field) {
+    return [...new Set(records.map((r) => r[field]).filter(Boolean))].sort();
+  }
+
+  function sum(records, field) {
+    return records.reduce((acc, r) => acc + (Number(r[field]) || 0), 0);
+  }
+
+  function setWarning(message) {
+    const el = $("data-warning");
+    if (!el) return;
+
+    if (!message) {
+      el.style.display = "none";
+      el.textContent = "";
+      return;
+    }
+
+    el.style.display = "block";
+    el.textContent = message;
+  }
+
+  function shortLabel(text, max = 42) {
+    const value = String(text || "");
+    if (value.length <= max) return value;
+    return value.slice(0, max - 3) + "...";
+  }
+
+  function populateSelect(id, values, label) {
+    const el = $(id);
+    if (!el) return;
+
+    const current = el.value;
+    el.innerHTML = "";
+
+    const all = document.createElement("option");
+    all.value = "All";
+    all.textContent = `All ${label}`;
+    el.appendChild(all);
+
+    values.forEach((v) => {
+      const opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      el.appendChild(opt);
+    });
+
+    if ([...el.options].some((o) => o.value === current)) {
+      el.value = current;
+    }
+  }
+
+  function initFilters() {
+    populateSelect("indicator-filter", uniqueValues(DATA, "indicator"), "Indicators");
+    populateSelect("agency-filter", uniqueValues(DATA, "agency"), "Agencies");
+    populateSelect("state-filter", uniqueValues(DATA, "state"), "States/Admin Areas");
+    populateSelect("county-filter", uniqueValues(DATA, "county"), "Counties");
+
+    [
+      "indicator-filter",
+      "agency-filter",
+      "state-filter",
+      "county-filter"
+    ].forEach((id) => {
+      const el = $(id);
+      if (el) el.addEventListener("change", onFilterChange);
+    });
+
+    const reset = $("reset-filters");
+    if (reset) {
+      reset.addEventListener("click", () => {
+        [
+          "indicator-filter",
+          "agency-filter",
+          "state-filter",
+          "county-filter"
+        ].forEach((id) => {
+          const el = $(id);
+          if (el) el.value = "All";
+        });
+
+        updateDashboard();
+      });
+    }
+  }
+
+  function onFilterChange() {
+    const state = $("state-filter")?.value || "All";
+    const countyEl = $("county-filter");
+
+    if (countyEl && this.id === "state-filter") {
+      const counties =
+        state === "All"
+          ? uniqueValues(DATA, "county")
+          : uniqueValues(DATA.filter((r) => r.state === state), "county");
+
+      populateSelect("county-filter", counties, "Counties");
+    }
+
+    updateDashboard();
+  }
+
+  function getFilteredRecords() {
+    const indicator = $("indicator-filter")?.value || "All";
+    const agency = $("agency-filter")?.value || "All";
+    const state = $("state-filter")?.value || "All";
+    const county = $("county-filter")?.value || "All";
+
+    return DATA.filter((r) => {
+      return (
+        (indicator === "All" || r.indicator === indicator) &&
+        (agency === "All" || r.agency === agency) &&
+        (state === "All" || r.state === state) &&
+        (county === "All" || r.county === county)
+      );
+    });
+  }
+
+  function groupSum(records, key, valueField) {
+    const out = {};
+
+    records.forEach((r) => {
+      const k = r[key] || "Not specified";
+      out[k] = (out[k] || 0) + (Number(r[valueField]) || 0);
+    });
+
+    return Object.entries(out)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }
+
+  function groupIndicators(records) {
+    const out = {};
+
+    records.forEach((r) => {
+      const indicator = r.indicator || "Not specified";
+
+      if (!out[indicator]) {
+        out[indicator] = {
+          indicator,
+          agencies: new Set(),
+          current: 0,
+          target: Number(r.target) || 0
+        };
+      }
+
+      out[indicator].current += Number(r.current) || 0;
+
+      if (r.agency) out[indicator].agencies.add(r.agency);
+
+      if (!out[indicator].target && Number(r.target)) {
+        out[indicator].target = Number(r.target);
+      }
+    });
+
+    return Object.values(out)
+      .map((d) => ({
+        indicator: d.indicator,
+        agencies: [...d.agencies].sort().join(", "),
+        current: d.current,
+        target: d.target,
+        achieved: pct(d.current, d.target)
+      }))
+      .sort((a, b) => b.current - a.current);
+  }
+
+  function darkPlotLayout(extra = {}) {
+    return {
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "rgba(0,0,0,0)",
+      font: {
+        color: "#e8f1fa",
+        family: "Inter, sans-serif",
+        size: 11
+      },
+      xaxis: {
+        gridcolor: "rgba(255,255,255,0.08)",
+        zerolinecolor: "rgba(255,255,255,0.15)",
+        color: "#8ba8c4"
+      },
+      yaxis: {
+        gridcolor: "rgba(255,255,255,0.05)",
+        zerolinecolor: "rgba(255,255,255,0.15)",
+        color: "#8ba8c4"
+      },
+      showlegend: false,
+      ...extra
+    };
+  }
+
+  function plotBar(id, rows, orientation = "h", color = CHART_BLUE, xTitle = "Current Number") {
+    const el = $(id);
+    if (!el || typeof Plotly === "undefined") return;
+
+    if (!rows.length) {
+      Plotly.newPlot(
+        id,
+        [],
+        darkPlotLayout({
+          title: {
+            text: "No data",
+            font: { color: "#e8f1fa", size: 13 }
+          },
+          margin: { t: 30, r: 20, b: 40, l: 120 }
+        }),
+        { displayModeBar: false, responsive: true }
+      );
+      return;
+    }
+
+    const chartRows = orientation === "h" ? [...rows].reverse() : rows;
+
+    const trace =
+      orientation === "h"
+        ? {
+            type: "bar",
+            orientation: "h",
+            y: chartRows.map((d) => shortLabel(d.name, 36)),
+            x: chartRows.map((d) => d.value),
+            text: chartRows.map((d) => fmt(d.value)),
+            textposition: "auto",
+            marker: { color },
+            customdata: chartRows.map((d) => d.name),
+            hovertemplate: "%{customdata}<br>%{x:,}<extra></extra>"
+          }
+        : {
+            type: "bar",
+            x: chartRows.map((d) => shortLabel(d.name, 22)),
+            y: chartRows.map((d) => d.value),
+            text: chartRows.map((d) => fmt(d.value)),
+            textposition: "auto",
+            marker: { color },
+            customdata: chartRows.map((d) => d.name),
+            hovertemplate: "%{customdata}<br>%{y:,}<extra></extra>"
+          };
+
+    Plotly.newPlot(
+      id,
+      [trace],
+      darkPlotLayout({
+        margin: {
+          t: 25,
+          r: 25,
+          b: orientation === "h" ? 40 : 90,
+          l: orientation === "h" ? 180 : 55
+        },
+        xaxis: {
+          title: orientation === "h" ? xTitle : "",
+          gridcolor: "rgba(255,255,255,0.08)",
+          zerolinecolor: "rgba(255,255,255,0.15)",
+          color: "#8ba8c4"
+        },
+        yaxis: {
+          title: "",
+          gridcolor: "rgba(255,255,255,0.05)",
+          zerolinecolor: "rgba(255,255,255,0.15)",
+          color: "#8ba8c4",
+          automargin: true
+        }
+      }),
+      { displayModeBar: false, responsive: true }
+    );
+  }
+
+  function updateKPIs(records) {
+    const states = uniqueValues(records.filter((r) => !r.isAdminArea), "state").length;
+    const adminAreas = uniqueValues(records.filter((r) => r.isAdminArea), "state").length;
+
+    if ($("kpi-states")) $("kpi-states").textContent = fmt(states);
+    if ($("kpi-admin-areas")) $("kpi-admin-areas").textContent = fmt(adminAreas);
+    if ($("kpi-counties")) $("kpi-counties").textContent = fmt(uniqueValues(records, "county").length);
+    if ($("kpi-agencies")) $("kpi-agencies").textContent = fmt(uniqueValues(records, "agency").length);
+    if ($("kpi-indicators")) $("kpi-indicators").textContent = fmt(uniqueValues(records, "indicator").length);
+    if ($("kpi-male")) $("kpi-male").textContent = fmt(sum(records, "male"));
+    if ($("kpi-female")) $("kpi-female").textContent = fmt(sum(records, "female"));
+  }
+
+  function updateInsights(records) {
+    const el = $("simple-insights-list");
+    if (!el) return;
+
+    if (!records.length) {
+      el.innerHTML = `<div class="simple-insight-item">No records match the selected filters.</div>`;
+      return;
+    }
+
+    const indicatorRows = groupIndicators(records);
+    const topIndicator = indicatorRows[0];
+    const topState = groupSum(records, "state", "current")[0];
+    const topCounty = groupSum(records, "county", "current")[0];
+
+    el.innerHTML = `
+      <div class="simple-insight-item"><strong>${fmt(uniqueValues(records, "indicator").length)}</strong> indicators are reported across <strong>${fmt(uniqueValues(records, "county").length)}</strong> counties.</div>
+      <div class="simple-insight-item">Highest current number is for <strong>${shortLabel(topIndicator?.indicator || "N/A", 70)}</strong>.</div>
+      <div class="simple-insight-item">Top state/admin area is <strong>${topState?.name || "N/A"}</strong>, with <strong>${fmt(topState?.value || 0)}</strong>.</div>
+      <div class="simple-insight-item">Top county is <strong>${topCounty?.name || "N/A"}</strong>, with <strong>${fmt(topCounty?.value || 0)}</strong>.</div>
+      <div class="simple-insight-item">Reported gender breakdown: <strong>${fmt(sum(records, "male"))}</strong> male and <strong>${fmt(sum(records, "female"))}</strong> female.</div>
+    `;
+  }
+
+  function renderIndicatorTable(records) {
+    const rows = groupIndicators(records);
+    lastTables.indicatorTable = rows;
+
+    const tbody = $("indicator-table");
+    if (!tbody) return;
+
+    tbody.innerHTML =
+      rows
+        .map(
+          (r) => `
+        <tr>
+          <td>${r.indicator}</td>
+          <td>${r.agencies}</td>
+          <td>${fmt(r.current)}</td>
+          <td>${fmt(r.target)}</td>
+          <td>${fmt1(r.achieved)}%</td>
+        </tr>
+      `
+        )
+        .join("") || `<tr><td colspan="5">No data</td></tr>`;
+  }
+
+  function initMap() {
+    if (map || !$("peace-map")) return;
+
+    map = L.map("peace-map", { scrollWheelZoom: false }).setView(
+      SOUTH_SUDAN_CENTER,
+      6
+    );
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    markersLayer = L.layerGroup().addTo(map);
+  }
+
+  function updateMap(records) {
+    initMap();
+    if (!map || !markersLayer) return;
+
+    markersLayer.clearLayers();
+
+    const byCounty = {};
+
+    records.forEach((r) => {
+      const key = r.county;
+
+      if (!byCounty[key]) {
+        byCounty[key] = {
+          county: r.county,
+          state: r.state,
+          indicators: new Set(),
+          agencies: new Set(),
+          current: 0
+        };
+      }
+
+      if (r.indicator) byCounty[key].indicators.add(r.indicator);
+      if (r.agency) byCounty[key].agencies.add(r.agency);
+      byCounty[key].current += Number(r.current) || 0;
+    });
+
+    const points = Object.values(byCounty).filter((d) => COUNTY_COORDS[d.county]);
+    const maxIndicators = Math.max(...points.map((d) => d.indicators.size), 1);
+    const bounds = [];
+
+    points.forEach((d) => {
+      const coords = COUNTY_COORDS[d.county];
+      const count = d.indicators.size;
+      const radius = 7 + Math.sqrt(count / maxIndicators) * 24;
+
+      const marker = L.circleMarker(coords, {
+        radius,
+        color: CHART_GREEN,
+        fillColor: CHART_GREEN,
+        fillOpacity: 0.65,
+        weight: 1
+      }).bindPopup(`
+        <strong>${d.county}</strong><br/>
+        State/Admin Area: ${d.state}<br/>
+        Indicators: ${fmt(count)}<br/>
+        Current Number: ${fmt(d.current)}<br/>
+        Reporting Entities: ${[...d.agencies].join(", ")}
+      `);
+
+      marker.addTo(markersLayer);
+      bounds.push(coords);
+    });
+
+    if (bounds.length) {
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 7 });
+    } else {
+      map.setView(SOUTH_SUDAN_CENTER, 6);
+    }
+
+    if ($("map-counties")) $("map-counties").textContent = fmt(uniqueValues(records, "county").length);
+    if ($("map-indicators")) $("map-indicators").textContent = fmt(uniqueValues(records, "indicator").length);
+    if ($("map-current")) $("map-current").textContent = fmt(sum(records, "current"));
+    if ($("map-agencies")) $("map-agencies").textContent = fmt(uniqueValues(records, "agency").length);
+  }
+
+  function renderCharts(records) {
+    const indicatorRows = groupIndicators(records);
+
+    lastTables.indicatorAchievement = indicatorRows.map((r) => ({
+      name: r.indicator,
+      value: r.achieved,
+      current: r.current,
+      target: r.target
+    }));
+
+    const achievementRows = lastTables.indicatorAchievement.sort((a, b) => b.value - a.value);
+
+    plotBar(
+      "indicator-achievement-chart",
+      achievementRows,
+      "h",
+      CHART_GREEN,
+      "% Achieved"
+    );
+
+    const stateRows = groupSum(records, "state", "current").slice(0, 12);
+    const countyRows = groupSum(records, "county", "current").slice(0, 12);
+    const agencyRows = groupSum(records, "agency", "current").slice(0, 12);
+
+    lastTables.state = stateRows;
+    lastTables.county = countyRows;
+    lastTables.agency = agencyRows;
+    lastTables.gender = [
+      { name: "Male", value: sum(records, "male") },
+      { name: "Female", value: sum(records, "female") }
+    ];
+
+    plotBar("state-chart", stateRows, "h", CHART_BLUE, "Current Number");
+    plotBar("county-chart", countyRows, "h", CHART_ORANGE, "Current Number");
+    plotBar("agency-chart", agencyRows, "h", CHART_BLUE, "Current Number");
+
+    if ($("gender-chart") && typeof Plotly !== "undefined") {
+      Plotly.newPlot(
+        "gender-chart",
+        [
+          {
+            type: "pie",
+            labels: ["Male", "Female"],
+            values: [sum(records, "male"), sum(records, "female")],
+            hole: 0.35,
+            textinfo: "label+percent",
+            marker: {
+              colors: [MALE_COLOR, FEMALE_COLOR]
+            },
+            hovertemplate: "%{label}<br>%{value:,}<br>%{percent}<extra></extra>"
+          }
+        ],
+        darkPlotLayout({
+          margin: { t: 20, r: 20, b: 20, l: 20 },
+          showlegend: true,
+          legend: {
+            font: { color: "#e8f1fa" }
+          }
+        }),
+        { displayModeBar: false, responsive: true }
+      );
+    }
+
+    renderSelectedIndicatorCharts(records);
+  }
+
+  function renderSelectedIndicatorCharts(records) {
+    const selectedIndicator = $("indicator-filter")?.value || "All";
+
+    let selectedRecords = records;
+
+    if (selectedIndicator === "All") {
+      const topIndicator = groupIndicators(records)[0]?.indicator;
+      selectedRecords = topIndicator
+        ? records.filter((r) => r.indicator === topIndicator)
+        : records;
+    }
+
+    const stateRows = groupSum(selectedRecords, "state", "current").slice(0, 5);
+
+    plotBar(
+      "selected-indicator-state-chart",
+      stateRows,
+      "h",
+      CHART_GREEN,
+      "Current Number"
+    );
+
+    if ($("selected-indicator-gender-chart") && typeof Plotly !== "undefined") {
+      Plotly.newPlot(
+        "selected-indicator-gender-chart",
+        [
+          {
+            type: "bar",
+            x: stateRows.map((d) => shortLabel(d.name, 20)),
+            y: stateRows.map((d) => {
+              const stateRecords = selectedRecords.filter((r) => r.state === d.name);
+              return sum(stateRecords, "male");
+            }),
+            name: "Male",
+            marker: { color: MALE_COLOR }
+          },
+          {
+            type: "bar",
+            x: stateRows.map((d) => shortLabel(d.name, 20)),
+            y: stateRows.map((d) => {
+              const stateRecords = selectedRecords.filter((r) => r.state === d.name);
+              return sum(stateRecords, "female");
+            }),
+            name: "Female",
+            marker: { color: FEMALE_COLOR }
+          }
+        ],
+        darkPlotLayout({
+          barmode: "stack",
+          margin: { t: 25, r: 25, b: 90, l: 55 },
+          showlegend: true,
+          legend: {
+            font: { color: "#e8f1fa" }
+          }
+        }),
+        { displayModeBar: false, responsive: true }
+      );
+    }
+  }
+
+  function renderRemarks(records) {
+    const tbody = $("remarks-table");
+    if (!tbody) return;
+
+    const rows = records
+      .filter((r) => r.remarks || r.risk || r.implementingPartners)
+      .slice(0, 80);
+
+    lastTables.remarks = rows;
+
+    tbody.innerHTML =
+      rows
+        .map((r) => {
+          const combined = [
+            r.remarks ? `Remarks: ${r.remarks}` : "",
+            r.risk ? `Risk: ${r.risk}` : "",
+            r.implementingPartners ? `Partners: ${r.implementingPartners}` : ""
+          ].filter(Boolean).join("<br/>");
+
+          return `
+            <tr>
+              <td>${r.state || ""}</td>
+              <td>${r.county || ""}</td>
+              <td>${r.indicator || ""}</td>
+              <td>${r.agency || ""}</td>
+              <td>${fmt(r.current)}</td>
+              <td>${combined}</td>
+            </tr>
+          `;
+        })
+        .join("") || `<tr><td colspan="6">No remarks, risks or partners reported for selected filters.</td></tr>`;
+  }
+
+  function updateDashboard() {
+    const records = getFilteredRecords();
+
+    updateKPIs(records);
+    updateInsights(records);
+    renderIndicatorTable(records);
+    updateMap(records);
+    renderCharts(records);
+    renderRemarks(records);
+  }
+
+  window.downloadChartPNG = function (chartId, filename) {
+    if (typeof Plotly === "undefined") return;
+
+    Plotly.downloadImage(chartId, {
+      format: "png",
+      filename: filename || chartId,
+      height: 650,
+      width: 1000,
+      scale: 2
+    });
+  };
+
+  window.downloadChartCSV = function (type) {
+    const rows = lastTables[type] || [];
+    if (!rows.length) return;
+
+    let csv = "";
+
+    if (type === "indicatorTable") {
+      csv =
+        "Indicator,Reporting UN Entities,Current Number,Target,Achieved %\n" +
+        rows
+          .map(
+            (r) =>
+              `"${r.indicator.replace(/"/g, '""')}","${r.agencies.replace(/"/g, '""')}",${r.current},${r.target},${r.achieved}`
+          )
+          .join("\n");
+    } else if (type === "indicatorAchievement") {
+      csv =
+        "Indicator,Achieved %,Current Number,Target\n" +
+        rows
+          .map(
+            (r) =>
+              `"${r.name.replace(/"/g, '""')}",${r.value},${r.current},${r.target}`
+          )
+          .join("\n");
+    } else if (type === "remarks") {
+      csv =
+        "State,County,Indicator,Agency,Current,Remarks,Risk,Implementing Partners\n" +
+        rows
+          .map(
+            (r) =>
+              `"${r.state}","${r.county}","${(r.indicator || "").replace(/"/g, '""')}","${r.agency}",${r.current},"${(r.remarks || "").replace(/"/g, '""')}","${(r.risk || "").replace(/"/g, '""')}","${(r.implementingPartners || "").replace(/"/g, '""')}"`
+          )
+          .join("\n");
+    } else {
+      csv =
+        "Name,Value\n" +
+        rows.map((r) => `"${r.name.replace(/"/g, '""')}",${r.value}`).join("\n");
+    }
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `peace_governance_${type}.csv`;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    if (!DATA.length) {
+      setWarning(
+        "No Peace and Governance records found. Please run generate-data-js.py and confirm the All Outputs sheet has Output = Peace and Governance."
+      );
+    }
+
+    initFilters();
+    initMap();
+    updateDashboard();
+  });
+})();
