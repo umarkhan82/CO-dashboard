@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rapid Response - Collective Outcomes Dashboard</title>
+
+  <link rel="stylesheet" href="css/style.css?v=20260503"/>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+  <script src="js/data.js?v=20260503" defer></script>
+  <script src="js/rapid-response.js?v=20260503" defer></script>
+</head>
+
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="index.html">
+    <img src="assets/logo.png" alt="UN South Sudan Logo"/>
+    <div class="brand-text">
+      <span class="brand-title">UN South Sudan</span>
+      <span class="brand-sub">UNCT-HCT Collective Outcomes Dashboard</span>
+    </div>
+  </a>
+
+  <div class="navbar-divider"></div>
+
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">📋 Overview</a>
+    <a class="nav-link" href="food-security.html">🌾 Food Security</a>
+    <a class="nav-link" href="basic-services.html">🏥 Basic Services</a>
+    <a class="nav-link" href="durable-solutions.html">🏘 Durable Solutions</a>
+    <a class="nav-link active" href="rapid-response.html">⚡ Rapid Response</a>
+    <a class="nav-link" href="peace-governance.html">🕊 Peace & Governance</a>
+  </div>
+</nav>
+
+<header class="page-header">
+  <div class="container page-header-inner">
+    <div class="page-tag">Collective Outcome 4</div>
+    <h1 class="page-title">Rapid Response — <span>Progress</span></h1>
+    <p class="page-subtitle">
+      Rapid, life-saving assistance and protection following new shocks, including conflict, disease outbreaks and other emergencies.
+    </p>
+    <div class="page-meta">
+      <div class="meta-item">📅 <strong>Period:</strong> Jul–Sep 2025</div>
+      <div class="meta-item">🤝 <strong>Lead:</strong> UNHCR, NRC</div>
+      <div class="meta-item">📊 <strong>Source:</strong> Rapid Response sheet</div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="container">
+
+    <div id="data-warning" class="data-warning" style="display:none;"></div>
+
+    <div class="filter-bar">
+      
+      <div class="filter-group">
+        <label class="filter-label" for="category-filter">Shock Type</label>
+        <select id="category-filter" class="map-select"></select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label" for="status-filter">Status</label>
+        <select id="status-filter" class="map-select"></select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label" for="agency-filter">Agency</label>
+        <select id="agency-filter" class="map-select"></select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label" for="state-filter">State/Admin Area</label>
+        <select id="state-filter" class="map-select"></select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label" for="county-filter">County</label>
+        <select id="county-filter" class="map-select"></select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label" for="service-filter">Service</label>
+        <select id="service-filter" class="map-select"></select>
+      </div>
+
+      <button id="reset-filters" class="reset-btn" type="button">Reset</button>
+    </div>
+
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon icon-blue">📊</span>
+        Rapid Response Snapshot
+      </div>
+
+      <div class="grid grid-kpi">
+        <div class="kpi-card states">
+          <div class="kpi-icon">📍</div>
+          <div class="kpi-label">States</div>
+          <div class="kpi-value" id="kpi-states">0</div>
+          <div class="kpi-sub">covered states</div>
+        </div>
+
+        <div class="kpi-card counties">
+          <div class="kpi-icon">🗺</div>
+          <div class="kpi-label">Counties</div>
+          <div class="kpi-value" id="kpi-counties">0</div>
+          <div class="kpi-sub">covered counties</div>
+        </div>
+
+        <div class="kpi-card beneficiaries">
+          <div class="kpi-icon">👥</div>
+          <div class="kpi-label">Single Count Beneficiaries</div>
+          <div class="kpi-value" id="kpi-single-count">0</div>
+          <div class="kpi-sub">deduplicated people reached</div>
+        </div>
+
+        <div class="kpi-card entities">
+          <div class="kpi-icon">⚡</div>
+          <div class="kpi-label">Responses</div>
+          <div class="kpi-value" id="kpi-responses">0</div>
+          <div class="kpi-sub">reported responses</div>
+        </div>
+
+        <div class="kpi-card admin">
+          <div class="kpi-icon">✅</div>
+          <div class="kpi-label">Concluded Responses</div>
+          <div class="kpi-value" id="kpi-concluded">0</div>
+          <div class="kpi-sub">completed responses</div>
+        </div>
+
+        <div class="kpi-card male">
+          <div class="kpi-icon">🔄</div>
+          <div class="kpi-label">Ongoing Responses</div>
+          <div class="kpi-value" id="kpi-ongoing">0</div>
+          <div class="kpi-sub">active responses</div>
+        </div>
+
+        <div class="kpi-card female">
+          <div class="kpi-icon">⏱</div>
+          <div class="kpi-label">Avg Days to Respond</div>
+          <div class="kpi-value" id="kpi-avg-days">0</div>
+          <div class="kpi-sub">from alert/shock to response</div>
+        </div>
+
+        <div class="kpi-card beneficiaries">
+          <div class="kpi-icon">🎯</div>
+          <div class="kpi-label">Within 14 Days</div>
+          <div class="kpi-value" id="kpi-within-14">0%</div>
+          <div class="kpi-sub">target: 40%</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="simple-insights-card">
+        <div class="simple-insights-header">
+          <span>🔎</span>
+          <div>
+            <div class="simple-insights-title">Key Insights</div>
+            <div class="simple-insights-subtitle">Automatically updated based on selected filters</div>
+          </div>
+        </div>
+        <div id="simple-insights-list" class="simple-insights-list">
+          <div class="simple-insight-item">Insights will appear once data is loaded.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon icon-blue">🗺</span>
+        Geographical Locations by Single Count Beneficiaries
+      </div>
+
+      <div class="map-dashboard">
+        <div class="map-panel">
+          <div class="map-note">
+            Boundaries and names shown on this map do not imply official endorsement or acceptance by the United Nations.
+          </div>
+          <div id="rapid-map" style="height:560px;"></div>
+        </div>
+
+        <aside class="map-side-panel">
+          <div class="map-box">
+            <h3>LEGEND</h3>
+            <div class="legend-muted">Bubble size = single count beneficiaries</div>
+            <div class="top-list" id="map-legend"></div>
+          </div>
+
+          <div class="map-box">
+            <h3>MAP SUMMARY</h3>
+            <div class="map-summary-grid">
+              <div><span>Counties</span><strong id="map-counties">0</strong></div>
+              <div><span>Beneficiaries</span><strong id="map-beneficiaries">0</strong></div>
+              <div><span>Male</span><strong id="map-male">0</strong></div>
+              <div><span>Female</span><strong id="map-female">0</strong></div>
+            </div>
+          </div>
+
+          <div class="map-box">
+            <h3>TOP 5 COUNTIES</h3>
+            <div id="map-top-counties" class="top-list"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon icon-green">🧾</span>
+        Service Response Summary
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">People Reached by Service</div>
+            <div class="chart-subtitle">Service values may overlap; use Single Count for deduplicated beneficiaries.</div>
+          </div>
+        </div>
+        <div class="chart-actions">
+          <button type="button" onclick="downloadChartCSV('service')">Download CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Service</th>
+                <th>Service Response Count</th>
+                <th>People Reached by Service</th>
+                <th>Concluded Service Responses</th>
+                <th>Ongoing Service Responses</th>
+              </tr>
+            </thead>
+            <tbody id="service-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon icon-orange">📈</span>
+        Response Analysis
+      </div>
+
+      <div class="grid grid-2">
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Single Count by Shock Type</div>
+              <div class="chart-subtitle">Conflict, disease outbreak, flood or other shock categories.</div>
+            </div>
+          </div>
+          <div class="chart-actions">
+            <button type="button" onclick="downloadChartPNG('shock-chart', 'rapid_response_shock_type')">Download PNG</button>
+            <button type="button" onclick="downloadChartCSV('shock')">Download CSV</button>
+          </div>
+          <div id="shock-chart" class="plotly-chart chart-medium"></div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Response Status</div>
+              <div class="chart-subtitle">Ongoing and concluded responses.</div>
+            </div>
+          </div>
+          <div class="chart-actions">
+            <button type="button" onclick="downloadChartPNG('status-chart', 'rapid_response_status')">Download PNG</button>
+            <button type="button" onclick="downloadChartCSV('status')">Download CSV</button>
+          </div>
+          <div id="status-chart" class="plotly-chart chart-medium"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon icon-pink">👥</span>
+        Beneficiaries and Response Time
+      </div>
+
+      <div class="grid grid-2">
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Male / Female Distribution</div>
+              <div class="chart-subtitle">Based on reported data across selected filters.</div>
+            </div>
+          </div>
+          <div class="chart-actions">
+            <button type="button" onclick="downloadChartPNG('gender-chart', 'rapid_response_gender')">Download PNG</button>
+            <button type="button" onclick="downloadChartCSV('gender')">Download CSV</button>
+          </div>
+          <div id="gender-chart" class="plotly-chart chart-medium"></div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Average Days to Respond by State</div>
+              <div class="chart-subtitle">Lower values indicate faster response activation.</div>
+            </div>
+          </div>
+          <div class="chart-actions">
+            <button type="button" onclick="downloadChartPNG('response-days-chart', 'rapid_response_days')">Download PNG</button>
+            <button type="button" onclick="downloadChartCSV('days')">Download CSV</button>
+          </div>
+          <div id="response-days-chart" class="plotly-chart chart-medium"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon icon-blue">📍</span>
+        State and County Analysis
+      </div>
+
+      <div class="grid grid-2">
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">States by Single Count Beneficiaries</div>
+              <div class="chart-subtitle">Based on selected filters.</div>
+            </div>
+          </div>
+          <div class="chart-actions">
+            <button type="button" onclick="downloadChartPNG('state-chart', 'rapid_response_states')">Download PNG</button>
+            <button type="button" onclick="downloadChartCSV('state')">Download CSV</button>
+          </div>
+          <div id="state-chart" class="plotly-chart chart-tall"></div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Top Counties by Single Count Beneficiaries</div>
+              <div class="chart-subtitle">Based on selected filters.</div>
+            </div>
+          </div>
+          <div class="chart-actions">
+            <button type="button" onclick="downloadChartPNG('county-chart', 'rapid_response_counties')">Download PNG</button>
+            <button type="button" onclick="downloadChartCSV('county')">Download CSV</button>
+          </div>
+          <div id="county-chart" class="plotly-chart chart-tall"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon icon-orange">⚠️</span>
+        Reported Challenges / Remarks
+      </div>
+      <div class="chart-wrap">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>State</th>
+                <th>County</th>
+                <th>Shock Type</th>
+                <th>Status</th>
+                <th>Days to Respond</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="remarks-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container footer-inner">
+    <p>UNCT-HCT Collective Outcomes Dashboard · Rapid Response · Jul–Sep 2025</p>
+  </div>
+</footer>
+
+</body>
+</html>

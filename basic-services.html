@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Basic Services - Collective Outcomes Dashboard</title>
+
+  <link rel="stylesheet" href="css/style.css?v=20260503"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+  <script src="js/data.js?v=20260503" defer></script>
+  <script src="js/basic-services.js?v=20260503" defer></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="index.html">
+    <img src="assets/logo.png" alt="UN South Sudan Logo"/>
+    <div class="brand-text">
+      <span class="brand-title">UN South Sudan</span>
+      <span class="brand-sub">UNCT-HCT Collective Outcomes Dashboard</span>
+    </div>
+  </a>
+  <div class="navbar-divider"></div>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">📋 Overview</a>
+    <a class="nav-link" href="food-security.html">🌾 Food Security</a>
+    <a class="nav-link active" href="basic-services.html">🏥 Basic Services</a>
+    <a class="nav-link" href="durable-solutions.html">🏘 Durable Solutions</a>
+    <a class="nav-link" href="rapid-response.html">⚡ Rapid Response</a>
+    <a class="nav-link" href="peace-governance.html">🕊 Peace & Governance</a>
+  </div>
+</nav>
+
+<header class="page-header">
+  <div class="container page-header-inner">
+    <div class="page-tag">Collective Outcome 2</div>
+    <h1 class="page-title">Basic Services — <span>Progress</span></h1>
+    <p class="page-subtitle">
+      Sustained access to health, education, and nutrition services under the UNCT-HCT Collective Outcomes framework.
+    </p>
+    <div class="page-meta">
+      <div class="meta-item">📅 <strong>Period:</strong> Jul–Sep 2025</div>
+      <div class="meta-item">🤝 <strong>Lead:</strong> WHO, UNICEF, NGO Forum</div>
+      <div class="meta-item">📊 <strong>Source:</strong> All Outputs sheet</div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="container">
+
+    <div id="data-warning" class="data-warning" style="display:none;"></div>
+
+    <section class="section basic-sector-section">
+      <div class="sector-toggle-card">
+        <div class="sector-toggle-label">Select Basic Services Sub-Category</div>
+        <div class="sector-toggle" role="tablist">
+          <button id="sector-education" class="sector-btn active" type="button" data-sector="Education">🎓 Education</button>
+          <button id="sector-health" class="sector-btn" type="button" data-sector="Health">🏥 Health</button>
+          <button id="sector-nutrition" class="sector-btn" type="button" data-sector="Nutrition">🥣 Nutrition</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label class="filter-label" for="indicator-filter">Indicator</label>
+        <select id="indicator-filter" class="map-select"></select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="agency-filter">Agency</label>
+        <select id="agency-filter" class="map-select"></select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="state-filter">State/Admin Area</label>
+        <select id="state-filter" class="map-select"></select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="county-filter">County</label>
+        <select id="county-filter" class="map-select"></select>
+      </div>
+      <button id="reset-filters" class="reset-btn" type="button">Reset</button>
+    </div>
+
+    <section class="section">
+      <div class="section-title"><span class="section-icon icon-blue">📊</span><span id="snapshot-title">Basic Services Snapshot</span></div>
+      <div class="grid grid-kpi">
+        <div class="kpi-card states"><div class="kpi-icon">📍</div><div class="kpi-label">States</div><div class="kpi-value" id="kpi-states">0</div><div class="kpi-sub">covered states</div></div>
+        <div class="kpi-card admin"><div class="kpi-icon">🧭</div><div class="kpi-label">Admin Areas</div><div class="kpi-value" id="kpi-admin-areas">0</div><div class="kpi-sub">special administrative areas</div></div>
+        <div class="kpi-card counties"><div class="kpi-icon">🗺</div><div class="kpi-label">Counties</div><div class="kpi-value" id="kpi-counties">0</div><div class="kpi-sub">covered counties</div></div>
+        <div class="kpi-card entities"><div class="kpi-icon">🤝</div><div class="kpi-label">Reporting Entities</div><div class="kpi-value" id="kpi-agencies">0</div><div class="kpi-sub">agencies / partners</div></div>
+        <div class="kpi-card beneficiaries"><div class="kpi-icon">👥</div><div class="kpi-label">Beneficiaries</div><div class="kpi-value" id="kpi-current">0</div><div class="kpi-sub" id="kpi-current-sub">people reached / served</div></div>
+        <div class="kpi-card male"><div class="kpi-icon">👨</div><div class="kpi-label">Male</div><div class="kpi-value" id="kpi-male">0</div><div class="kpi-sub">reported male</div></div>
+        <div class="kpi-card female"><div class="kpi-icon">👩</div><div class="kpi-label">Female</div><div class="kpi-value" id="kpi-female">0</div><div class="kpi-sub">reported female</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="simple-insights-card">
+        <div class="simple-insights-header"><span>🔎</span><div><div class="simple-insights-title">Key Insights</div><div class="simple-insights-subtitle">Automatically updated based on selected filters and sub-category</div></div></div>
+        <div id="simple-insights-list" class="simple-insights-list"><div class="simple-insight-item">Insights will appear once data is loaded.</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title"><span class="section-icon icon-blue">🗺</span>Geographical Coverage by Beneficiaries</div>
+      <div class="map-dashboard">
+        <div class="map-panel">
+          <div class="map-note">Boundaries and names shown on this map do not imply official endorsement or acceptance by the United Nations.</div>
+          <div id="basic-map"></div>
+        </div>
+        <aside class="map-side-panel">
+          <div class="map-box"><h3>LEGEND</h3><div class="legend-gradient"></div><div class="legend-scale"><span>Low</span><span>Medium</span><span>High</span></div><div class="legend-muted">County shading = beneficiaries</div></div>
+          <div class="map-box"><h3>MAP SUMMARY</h3><div class="map-summary-grid"><div><span>Counties</span><strong id="map-counties">0</strong></div><div><span>Beneficiaries</span><strong id="map-beneficiaries">0</strong></div><div><span>Male</span><strong id="map-male">0</strong></div><div><span>Female</span><strong id="map-female">0</strong></div></div></div>
+          <div class="map-box"><h3>TOP 5 COUNTIES</h3><div id="map-top-counties" class="top-list"></div></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="indicator-contribution-section">
+      <div class="section-title"><span class="section-icon icon-green">📊</span>Indicator Contribution by Reporting Entity</div>
+      <div class="chart-wrap">
+        <div class="chart-header"><div><div class="chart-title">Achievement % by Indicator and Reporting Entity</div><div class="chart-subtitle">Stacked percentage contribution by reporting entity; 100% target shown as a marker line.</div></div></div>
+        <div class="chart-actions"><button type="button" onclick="downloadBasicChartPNG('indicator-agency-chart', 'basic_services_indicator_contribution')">Download PNG</button><button type="button" onclick="downloadBasicChartCSV('indicatorAgency')">Download CSV</button></div>
+        <div id="indicator-agency-chart" class="plotly-chart chart-medium"></div>
+        <div class="detail-toggle-wrap"><button id="indicator-table-toggle" class="detail-toggle-btn" type="button" onclick="toggleBasicIndicatorTable()">Show Detailed Table</button></div>
+        <div id="indicator-table-panel" class="detail-table-panel" style="display:none;">
+          <div class="detail-table-title">Detailed Indicator Progress Table</div>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>Sub-Category</th><th>Indicator</th><th>Reporting Agencies</th><th>Current Number</th><th>Target</th><th>Achieved %</th></tr></thead><tbody id="indicator-table"></tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title"><span class="section-icon icon-orange">📈</span>State and County Analysis</div>
+      <div class="grid grid-2">
+        <div class="chart-wrap"><div class="chart-header"><div><div class="chart-title">States / Admin Areas by Beneficiaries</div><div class="chart-subtitle">Based on latest reported data across selected filters.</div></div></div><div class="chart-actions"><button type="button" onclick="downloadBasicChartPNG('state-chart', 'basic_services_states')">Download PNG</button><button type="button" onclick="downloadBasicChartCSV('state')">Download CSV</button></div><div id="state-chart" class="plotly-chart chart-tall"></div></div>
+        <div class="chart-wrap"><div class="chart-header"><div><div class="chart-title">Top Counties by Beneficiaries</div><div class="chart-subtitle">Based on latest reported data across selected filters.</div></div></div><div class="chart-actions"><button type="button" onclick="downloadBasicChartPNG('county-chart', 'basic_services_counties')">Download PNG</button><button type="button" onclick="downloadBasicChartCSV('county')">Download CSV</button></div><div id="county-chart" class="plotly-chart chart-tall"></div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title"><span class="section-icon icon-pink">👥</span>Gender and Agency Contribution</div>
+      <div class="grid grid-2">
+        <div class="chart-wrap"><div class="chart-header"><div><div class="chart-title">Male / Female Distribution</div><div class="chart-subtitle">Based on latest reported data across selected filters.</div></div></div><div class="chart-actions"><button type="button" onclick="downloadBasicChartPNG('gender-chart', 'basic_services_gender')">Download PNG</button><button type="button" onclick="downloadBasicChartCSV('gender')">Download CSV</button></div><div id="gender-chart" class="plotly-chart chart-medium"></div></div>
+        <div class="chart-wrap"><div class="chart-header"><div><div class="chart-title">Contribution by Reporting Entity</div><div class="chart-subtitle">Based on latest reported data across selected filters.</div></div></div><div class="chart-actions"><button type="button" onclick="downloadBasicChartPNG('agency-chart', 'basic_services_agencies')">Download PNG</button><button type="button" onclick="downloadBasicChartCSV('agency')">Download CSV</button></div><div id="agency-chart" class="plotly-chart chart-medium"></div></div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer><div class="container footer-inner"><p>UNCT-HCT Collective Outcomes Dashboard · Basic Services · Jul–Sep 2025</p></div></footer>
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Peace and Governance - Collective Outcomes Dashboard</title>
+
+  <link rel="stylesheet" href="css/style.css?v=20260504"/>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+
+  <script src="js/data.js?v=20260504" defer></script>
+  <script src="js/peace-governance.js?v=20260504" defer></script>
+</head>
+
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="index.html">
+    <img src="assets/logo.png" alt="UN South Sudan Logo"/>
+    <div class="brand-text">
+      <span class="brand-title">UN South Sudan</span>
+      <span class="brand-sub">UNCT-HCT Collective Outcomes Dashboard</span>
+    </div>
+  </a>
+
+  <div class="navbar-divider"></div>
+
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">📋 Overview</a>
+    <a class="nav-link" href="food-security.html">🌾 Food Security</a>
+    <a class="nav-link" href="basic-services.html">🏥 Basic Services</a>
+    <a class="nav-link" href="durable-solutions.html">🏘 Durable Solutions</a>
+    <a class="nav-link" href="rapid-response.html">⚡ Rapid Response</a>
+    <a class="nav-link active" href="peace-governance.html">🕊 Peace & Governance</a>
+  </div>
+</nav>
+
+<header class="page-header">
+  <div class="container page-header-inner">
+    <div class="page-tag">Collective Outcome 5</div>
+    <h1 class="page-title">Peace & Governance — <span>Progress</span></h1>
+    <p class="page-subtitle">
+      Indicator-specific progress on civic education, peace infrastructure, access to justice, rule of law and SGBV-related capacity strengthening.
+    </p>
+    <div class="page-meta">
+      <div class="meta-item">📅 <strong>Period:</strong> Jul–Sep 2025</div>
+      <div class="meta-item">🤝 <strong>Entities:</strong> IOM, UNDP, UNFPA, UNMISS, UNWOMEN</div>
+      <div class="meta-item">📊 <strong>Source:</strong> All Outputs sheet</div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="container">
+
+    <div id="data-warning" class="data-warning" style="display:none;"></div>
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label class="filter-label" for="indicator-filter">Indicator</label>
+        <select id="indicator-filter" class="map-select"></select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label" for="agency-filter">Agency</label>
+        <select id="agency-filter" class="map-select"></select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label" for="state-filter">State/Admin Area</label>
+        <select id="state-filter" class="map-select"></select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label" for="county-filter">County</label>
+        <select id="county-filter" class="map-select"></select>
+      </div>
+
+      <button id="reset-filters" class="reset-btn" type="button">Reset</button>
+    </div>
+
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon icon-blue">📊</span>
+        Peace and Governance Snapshot
+      </div>
+
+      <div class="grid grid-kpi">
+        <div class="kpi-card states">
+          <div class="kpi-icon">📍</div>
+          <div class="kpi-label">States</div>
+          <div class="kpi-value" id="kpi-states">0</div>
+          <div class="kpi-sub">covered states</div>
+        </div>
+
+        <div class="kpi-card admin">
+          <div class="kpi-icon">🧭</div>
+          <div class="kpi-label">Admin Areas</div>
+          <div class="kpi-value" id="kpi-admin-areas">0</div>
+          <div class="kpi-sub">special admin areas</div>
+        </div>
+
+        <div class="kpi-card counties">
+          <div class="kpi-icon">🗺</div>
+          <div class="kpi-label">Counties</div>
+          <div class="kpi-value" id="kpi-counties">0</div>
+          <div class="kpi-sub">covered counties</div>
+        </div>
+
+        <div class="kpi-card entities">
+          <div class="kpi-icon">🤝</div>
+          <div class="kpi-label">UN Entities</div>
+          <div class="kpi-value" id="kpi-agencies">0</div>
+          <div class="kpi-sub">reporting entities</div>
+        </div>
+
+        <div class="kpi-card beneficiaries">
+          <div class="kpi-icon">📌</div>
+          <div class="kpi-label">Indicators</div>
+          <div class="kpi-value" id="kpi-indicators">0</div>
+          <div class="kpi-sub">reported indicators</div>
+        </div>
+
+        <div class="kpi-card female">
+          <div class="kpi-icon">⚠️</div>
+          <div class="kpi-label">Below 50%</div>
+          <div class="kpi-value" id="kpi-below-50">0</div>
+          <div class="kpi-sub">indicators</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="simple-insights-card">
+        <div class="simple-insights-header">
+          <span>🔎</span>
+          <div>
+            <div class="simple-insights-title">Key Insights</div>
+            <div class="simple-insights-subtitle">Indicator-specific analysis based on selected filters</div>
+          </div>
+        </div>
+        <div id="simple-insights-list" class="simple-insights-list"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="grid grid-2">
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Indicator Progress Table</div>
+              <div class="chart-subtitle">Current number, target and percentage achieved by indicator.</div>
+            </div>
+          </div>
+
+          <div class="chart-actions">
+            <button type="button" onclick="downloadChartCSV('indicatorTable')">Download CSV</button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Indicator</th>
+                  <th>Reporting UN Entities</th>
+                  <th>Current Number</th>
+                  <th>Target</th>
+                  <th>% Achieved</th>
+                </tr>
+              </thead>
+              <tbody id="indicator-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Geographical Coverage by # of Indicators</div>
+              <div class="chart-subtitle">County shading shows number of indicators reported.</div>
+            </div>
+          </div>
+
+          <div class="map-dashboard">
+            <div class="map-panel">
+              <div class="map-note">
+                Boundaries and names shown on this map do not imply official endorsement or acceptance by the United Nations.
+              </div>
+              <div id="peace-map"></div>
+            </div>
+
+            <aside class="map-side-panel">
+              <div class="map-box">
+                <h3>LEGEND</h3>
+                <div class="legend-gradient"></div>
+                <div class="legend-scale">
+                  <span>Low</span>
+                  <span>Medium</span>
+                  <span>High</span>
+                </div>
+                <div class="legend-muted">County shading = # of indicators</div>
+              </div>
+
+              <div class="map-box">
+                <h3>MAP SUMMARY</h3>
+                <div class="map-summary-grid">
+                  <div><span>Counties</span><strong id="map-counties">0</strong></div>
+                  <div><span>Indicators</span><strong id="map-indicators">0</strong></div>
+                  <div><span>Entities</span><strong id="map-agencies">0</strong></div>
+                </div>
+              </div>
+
+              <div class="map-box">
+                <h3>TOP 5 COUNTIES</h3>
+                <div id="map-top-counties" class="top-list"></div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon icon-green">🎯</span>
+        Indicator Achievement
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Achievement % by Indicator</div>
+            <div class="chart-subtitle">Each indicator is assessed against its own agreed target.</div>
+          </div>
+        </div>
+
+        <div class="chart-actions">
+          <button type="button" onclick="downloadChartPNG('indicator-achievement-chart', 'peace_governance_indicator_achievement')">Download PNG</button>
+          <button type="button" onclick="downloadChartCSV('indicatorAchievement')">Download CSV</button>
+        </div>
+
+        <div id="indicator-achievement-chart" class="plotly-chart chart-tall"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon icon-orange">📌</span>
+        Indicator-Specific Analysis
+      </div>
+
+      <div class="grid grid-3-peace">
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Top 5 States — Peace Committees</div>
+              <div class="chart-subtitle">Community peace committees/platforms operational.</div>
+            </div>
+          </div>
+          <div id="committees-chart" class="plotly-chart chart-medium"></div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Duty Bearers with Enhanced SGBV Knowledge</div>
+              <div class="chart-subtitle">Number trained by state/admin area.</div>
+            </div>
+          </div>
+          <div id="sgbv-chart" class="plotly-chart chart-medium"></div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Access-to-Justice Services</div>
+              <div class="chart-subtitle">Top 5 states by beneficiaries, with gender where available.</div>
+            </div>
+          </div>
+          <div id="justice-services-chart" class="plotly-chart chart-medium"></div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Justice Sector Actors with Enhanced Skills</div>
+              <div class="chart-subtitle">Top states by trained justice actors, with gender where available.</div>
+            </div>
+          </div>
+          <div id="justice-actors-chart" class="plotly-chart chart-medium"></div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Mobile Access-to-Justice Locations</div>
+              <div class="chart-subtitle">Conflict-affected locations with operational mobile access-to-justice service.</div>
+            </div>
+          </div>
+          <div id="mobile-justice-chart" class="plotly-chart chart-medium"></div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Civic Education Beneficiaries</div>
+              <div class="chart-subtitle">People reached with civic education, with gender where available.</div>
+            </div>
+          </div>
+          <div id="civic-education-chart" class="plotly-chart chart-medium"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon icon-blue">📍</span>
+        Coverage Analysis
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">States / Admin Areas by # of Indicators</div>
+            <div class="chart-subtitle">Coverage count, not beneficiary aggregation.</div>
+          </div>
+        </div>
+        <div id="state-indicator-coverage-chart" class="plotly-chart chart-medium"></div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container footer-inner">
+    <p>UNCT-HCT Collective Outcomes Dashboard · Peace and Governance · Jul–Sep 2025</p>
+  </div>
+</footer>
+
+</body>
+</html>
