@@ -1329,3 +1329,226 @@ footer p {
   .sector-toggle-card { align-items: stretch; }
   .sector-toggle, .sector-btn { width: 100%; }
 }
+
+/* =========================================================
+   SHAREPOINT EMBED RESPONSIVE FIXES
+   These rules override earlier sizing so filters, KPI cards,
+   map and charts align better inside SharePoint iframe width.
+   ========================================================= */
+
+/* Keep the main dashboard fully usable inside SharePoint */
+html,
+body {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+.container,
+.main,
+.section,
+.page-header,
+.page-header-inner,
+.navbar,
+.grid,
+.chart-wrap,
+.map-dashboard,
+.map-panel {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* More compact header/navigation for embedded view */
+.navbar {
+  gap: 18px !important;
+  padding-left: clamp(14px, 1.5vw, 24px) !important;
+  padding-right: clamp(14px, 1.5vw, 24px) !important;
+}
+
+.nav-link {
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+}
+
+/* Filter bar: clean 2-row layout instead of broken inline wrapping */
+.filter-bar {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(280px, 1fr)) auto !important;
+  gap: 22px 28px !important;
+  align-items: end !important;
+  padding: 22px 0 26px !important;
+  margin-bottom: 28px !important;
+  width: 100% !important;
+}
+
+.filter-group {
+  display: grid !important;
+  grid-template-columns: 130px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 14px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  flex: none !important;
+}
+
+.filter-label {
+  font-size: clamp(15px, 1.1vw, 18px) !important;
+  font-weight: 800 !important;
+  color: #8fbce8 !important;
+  white-space: nowrap !important;
+}
+
+.map-select {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 50px !important;
+  font-size: clamp(15px, 1vw, 17px) !important;
+}
+
+.reset-btn {
+  min-height: 50px !important;
+  padding: 8px 24px !important;
+  align-self: center !important;
+  justify-self: start !important;
+  white-space: nowrap !important;
+}
+
+/* KPI cards: auto fit instead of fixed seven columns */
+.grid-kpi {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  gap: 18px !important;
+  width: 100% !important;
+}
+
+.kpi-card {
+  min-height: 118px !important;
+}
+
+/* Make KPI text safer in narrower embed widths */
+.kpi-value {
+  font-size: clamp(24px, 2vw, 34px) !important;
+  white-space: nowrap !important;
+}
+
+.kpi-sub,
+.kpi-label {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Map layout: keep side panel readable but do not squeeze map */
+.map-dashboard {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px) !important;
+  gap: 22px !important;
+}
+
+.map-side-panel,
+.map-box {
+  min-width: 0 !important;
+}
+
+/* Plotly responsiveness */
+.plotly-chart,
+.js-plotly-plot,
+.plot-container,
+.svg-container {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Medium SharePoint iframe widths */
+@media (max-width: 1250px) {
+  .filter-bar {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .reset-btn {
+    grid-column: 2 !important;
+    justify-self: start !important;
+  }
+
+  .filter-group {
+    grid-template-columns: 120px minmax(0, 1fr) !important;
+  }
+
+  .map-dashboard {
+    grid-template-columns: 1fr !important;
+  }
+
+  .map-side-panel {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Narrow SharePoint iframe/mobile */
+@media (max-width: 850px) {
+  .navbar {
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .navbar-divider {
+    display: none !important;
+  }
+
+  .nav-links {
+    width: 100% !important;
+  }
+
+  .filter-bar {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+    padding: 16px 0 22px !important;
+  }
+
+  .filter-group {
+    grid-template-columns: 1fr !important;
+    gap: 7px !important;
+  }
+
+  .filter-label {
+    font-size: 14px !important;
+  }
+
+  .reset-btn {
+    grid-column: auto !important;
+    width: 100% !important;
+    justify-self: stretch !important;
+  }
+
+  .grid-kpi {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  }
+
+  .map-side-panel {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .page-title {
+    font-size: 27px !important;
+  }
+
+  .grid-kpi,
+  .grid-2,
+  .grid-3-peace {
+    grid-template-columns: 1fr !important;
+  }
+
+  .chart-wrap,
+  .simple-insights-card,
+  .map-box {
+    padding: 16px !important;
+  }
+}
